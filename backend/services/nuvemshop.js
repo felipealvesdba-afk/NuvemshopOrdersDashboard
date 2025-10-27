@@ -61,7 +61,7 @@ class NuvemshopService {
       }
 
       // Build URL with pagination parameters (always fetch all orders)
-      let url = `${this.baseUrl}/orders?page=${page}&per_page=${perPage}`;
+      let url = `${this.baseUrl}/orders?status=open&page=${page}&per_page=${perPage}`;
       
       // Add shipping_status filter if specified
       if (shipping_status && shipping_status !== '' && shipping_status !== 'any') {
