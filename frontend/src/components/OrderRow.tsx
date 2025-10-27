@@ -86,9 +86,10 @@ export const OrderRow = ({ order, onUpdateNote, onDeleteNote, onToggleAttention 
       </td>
       <td className="px-3 py-4 text-center">
         <Badge
-          variant={order.shipping_status === "shipped" ? "secondary" : "default"}
+          variant="outline"
           className={cn(
-            order.shipping_status === "unpacked" && "bg-primary/10 text-primary hover:bg-primary/20",
+            order.shipping_status === "shipped" && "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+            order.shipping_status === "unpacked" && "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200",
             "text-xs"
           )}
         >
