@@ -1,4 +1,10 @@
-require('dotenv').config();
+// Load environment variables (ignore errors if .env doesn't exist)
+try {
+  require('dotenv').config();
+} catch (error) {
+  console.warn('dotenv config failed, using environment variables from system');
+}
+
 const express = require('express');
 const cors = require('cors');
 const orderRoutes = require('./routes/orders');
