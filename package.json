@@ -1,0 +1,24 @@
+{
+  "name": "nuvem-integration-dashboard",
+  "version": "1.0.0",
+  "description": "Full-stack Nuvemshop order management dashboard",
+  "private": true,
+  "scripts": {
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm start",
+    "build": "cd frontend && npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "nuvemshop",
+    "dashboard",
+    "e-commerce",
+    "orders"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+

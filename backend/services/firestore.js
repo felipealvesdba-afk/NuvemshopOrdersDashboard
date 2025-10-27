@@ -1,5 +1,4 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
 
 class FirestoreService {
   constructor() {
@@ -16,10 +15,37 @@ class FirestoreService {
     }
 
     try {
-      // Initialize Firebase Admin SDK with service account credentials
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
+      // Check if running in Vercel with environment variables
+      let serviceAccount;
+      
+      if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        // Parse from environment variable (for Vercel)
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      } else {
+        // Try to load from file (for local development)
+        try {
+          serviceAccount = require('../serviceAccountKey.json');
+        } catch (err) {
+          console.log('No Firebase service account found - using fallback mode');
+          this.initialized = false;
+          this.db = null;
+          return;
+        }
+      }
+
+      // Check if already initialized (for serverless environments)
+      if (admin.apps.length === 0) {
+        // Initialize Firebase Admin SDK with service account credentials
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount)
+        });
+      } else {
+        // Use existing app
+        this.db = admin.firestore();
+        this.initialized = true;
+        console.log('Using existing Firebase app');
+        return;
+      }
 
       this.db = admin.firestore();
       this.initialized = true;

@@ -20,7 +20,8 @@ export default defineConfig({
       },
     },
   },
+  // For production, use the same domain (relative API calls)
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:4000')
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000'))
   },
 });

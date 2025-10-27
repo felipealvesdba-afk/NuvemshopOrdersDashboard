@@ -1,0 +1,24 @@
+# Ignore development files
+backend/node_modules
+frontend/node_modules
+backend/.env
+backend/serviceAccountKey.json
+*.log
+.DS_Store
+
+# Keep only what's needed
+!backend/server.js
+!backend/routes/**
+!backend/services/**
+!backend/cron/**
+!backend/package.json
+
+# Frontend files
+!frontend/src/**
+!frontend/public/**
+!frontend/package.json
+!frontend/vite.config.ts
+!frontend/index.html
+!frontend/tsconfig.json
+!frontend/tailwind.config.ts
+

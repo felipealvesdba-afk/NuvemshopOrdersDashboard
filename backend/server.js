@@ -118,8 +118,16 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Start server
+// Start server (only for local development)
 async function startServer() {
+  // Check if running in Vercel serverless environment
+  if (process.env.VERCEL) {
+    console.log('Running in Vercel serverless environment');
+    firestoreService.initialize();
+    return app;
+  }
+
+  // Local development only
   try {
     // Validate required environment variables
     const requiredEnvVars = [
@@ -135,15 +143,14 @@ async function startServer() {
       process.exit(1);
     }
 
-    // Check for Firebase service account key file
+    // Check for Firebase service account key file (only for local dev)
     const fs = require('fs');
     const path = require('path');
     const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
     
-    if (!fs.existsSync(serviceAccountPath)) {
-      console.error('Firebase service account key file not found!');
-      console.error('Please place your serviceAccountKey.json file in the backend root directory.');
-      process.exit(1);
+    if (!fs.existsSync(serviceAccountPath) && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      console.warn('Firebase service account key file not found!');
+      console.warn('Continuing without Firebase (notes will not persist)');
     }
 
     // Initialize Firestore
@@ -156,7 +163,7 @@ async function startServer() {
 
     // Start the server
     app.listen(PORT, () => {
-      
+      console.log(`Server running on http://localhost:${PORT}`);
     });
 
   } catch (error) {
@@ -165,7 +172,13 @@ async function startServer() {
   }
 }
 
-// Start the server
-startServer();
+// Start the server only if not in serverless environment
+if (process.env.VERCEL) {
+  // For Vercel, just initialize and return app
+  firestoreService.initialize();
+} else {
+  // For local development
+  startServer();
+}
 
 module.exports = app;
