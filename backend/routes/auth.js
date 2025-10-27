@@ -289,6 +289,13 @@ router.put('/profile', async (req, res) => {
  * Register a new user
  */
 router.post('/register', async (req, res) => {
+  // Ensure JSON response
+  const originalSend = res.send;
+  res.send = function(data) {
+    res.setHeader('Content-Type', 'application/json');
+    return originalSend.call(this, data);
+  };
+  
   try {
     const { email, password, name, role = 'user' } = req.body;
 
@@ -299,13 +306,19 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if user already exists in Firebase
-    const firebaseResult = await userService.getUserByEmail(email);
-    if (firebaseResult.success && firebaseResult.exists) {
-      return res.status(409).json({
-        success: false,
-        message: 'User already exists'
-      });
+    // Check if user already exists in Firebase (with graceful fallback)
+    let firebaseResult = null;
+    try {
+      firebaseResult = await userService.getUserByEmail(email);
+      if (firebaseResult?.success && firebaseResult?.exists) {
+        return res.status(409).json({
+          success: false,
+          message: 'User already exists'
+        });
+      }
+    } catch (firebaseError) {
+      console.warn('Firebase check failed, using fallback:', firebaseError.message);
+      // Continue with mock users check
     }
 
     // Check mock users as fallback
@@ -331,12 +344,17 @@ router.post('/register', async (req, res) => {
     };
 
     // Try to save to Firebase first
-    const createResult = await userService.createUser(newUser);
-    if (!createResult.success) {
-      console.warn('Failed to create user in Firebase, using fallback');
-      // Fallback to mock users
-      mockUsers.push(newUser);
+    try {
+      const createResult = await userService.createUser(newUser);
+      if (!createResult.success) {
+        console.warn('Failed to create user in Firebase, using fallback');
+      }
+    } catch (firebaseError) {
+      console.warn('Firebase user creation failed, using fallback:', firebaseError.message);
     }
+    
+    // Always add to mock users as fallback
+    mockUsers.push(newUser);
 
     // Generate token
     const token = generateToken(newUser);
@@ -358,11 +376,25 @@ router.post('/register', async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error.message);
     console.error('Error stack:', error.stack);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    
+    // Force JSON response
+    try {
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error',
+          error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+      }
+    } catch (jsonError) {
+      console.error('Failed to send JSON error response:', jsonError);
+      res.type('json');
+      res.status(500).send(JSON.stringify({
+        success: false,
+        message: 'Registration failed',
+        error: 'An unexpected error occurred'
+      }));
+    }
   }
 });
 
