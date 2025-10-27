@@ -7,10 +7,19 @@
     "install:all": "cd frontend && npm install && cd ../backend && npm install",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm start",
-    "build": "cd frontend && npm run build"
+    "build": "cd frontend && npm run build",
+    "install": "cd frontend && npm install && cd ../backend && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-admin": "^12.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^2.7.0"
   },
   "keywords": [
     "nuvemshop",
