@@ -204,7 +204,12 @@ async function startServer() {
 // Start the server only if not in serverless environment
 if (process.env.VERCEL) {
   // For Vercel, just initialize and return app
-  firestoreService.initialize();
+  try {
+    firestoreService.initialize();
+  } catch (error) {
+    console.error('Firestore initialization error in Vercel:', error.message);
+    // Continue without Firebase - app will work with fallback
+  }
 } else {
   // For local development
   startServer();
