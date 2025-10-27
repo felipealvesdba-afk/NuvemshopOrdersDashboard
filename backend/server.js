@@ -22,6 +22,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware to ensure all responses are JSON
+app.use((req, res, next) => {
+  // Store original json method
+  const originalJson = res.json;
+  
+  // Override json method to always ensure JSON response
+  res.json = function(data) {
+    res.setHeader('Content-Type', 'application/json');
+    return originalJson.call(this, data);
+  };
+  
+  next();
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -97,12 +111,27 @@ app.use('*', (req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
+  console.error('Error stack:', error.stack);
   
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
-  });
+  // Make sure we always send JSON, even if an error occurred
+  try {
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' || process.env.VERCEL ? error.message : 'Something went wrong'
+      });
+    }
+  } catch (e) {
+    // Last resort - log and send plain text as JSON
+    console.error('Critical: Could not send JSON error response:', e);
+    res.type('json');
+    res.status(500).send(JSON.stringify({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred'
+    }));
+  }
 });
 
 // Graceful shutdown handler
