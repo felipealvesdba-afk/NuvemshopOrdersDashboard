@@ -12,6 +12,7 @@ export interface Order {
   created_at: string;
   total: number;
   currency: string;
+  label_printed_at?: string | null; // etiqueta Nuvem Envio impressa pelo robô
   customer: {
     first_name: string;
     last_name: string;
@@ -28,4 +29,11 @@ export interface OrderStats {
   totalDelayed: number;
   totalAttention: number;
   lastUpdated: string;
+}
+
+export interface LabelPrint {
+  pedido: string;
+  impresso_em: string;
+  valor_total_rodada: number | null;
+  etiquetas: string[];
 }

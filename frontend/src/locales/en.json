@@ -159,7 +159,7 @@
   },
   "status": {
     "unpacked": "Unpacked",
-    "unshipped": "Unshipped", 
+    "unshipped": "Unshipped",
     "shipped": "Shipped"
   },
   "pagination": {
@@ -170,5 +170,13 @@
     "orders": "orders",
     "goToPage": "Go to page",
     "page": "Page"
+  },
+  "labels": {
+    "tab": "Printed labels",
+    "empty": "No labels printed by the robot in the last 7 days.",
+    "today": "Today",
+    "count": "label(s)",
+    "order": "Order",
+    "printedAt": "Printed at"
   }
 }

@@ -410,6 +410,52 @@ class FirestoreService {
       };
     }
   }
+  /**
+   * Etiquetas Nuvem Envio impressas pelo robô do Mac mini (coleção "etiquetas_impressas", 1 doc por pedido)
+   */
+  async saveLabelPrints(orderNumbers, data) {
+    try {
+      this.initialize();
+      if (!this.isAvailable()) {
+        return { success: false, message: 'Firestore not available' };
+      }
+      const batch = this.db.batch();
+      for (const numero of orderNumbers) {
+        const ref = this.db.collection('etiquetas_impressas').doc(String(numero));
+        batch.set(ref, {
+          pedido: String(numero),
+          impresso_em: data.impresso_em || new Date().toISOString(),
+          valor_total_rodada: typeof data.valor_total === 'number' ? data.valor_total : null,
+          etiquetas: Array.isArray(data.etiquetas) ? data.etiquetas : [],
+          registrado_em: new Date().toISOString()
+        }, { merge: true });
+      }
+      await batch.commit();
+      return { success: true, saved: orderNumbers.length };
+    } catch (error) {
+      console.error('Error saving label prints:', error.message);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async getLabelPrints(days = 7) {
+    try {
+      this.initialize();
+      if (!this.isAvailable()) {
+        return { success: true, items: [], fallback: true };
+      }
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const snap = await this.db.collection('etiquetas_impressas')
+        .where('impresso_em', '>=', since)
+        .orderBy('impresso_em', 'desc')
+        .limit(1000)
+        .get();
+      return { success: true, items: snap.docs.map(d => d.data()) };
+    } catch (error) {
+      console.error('Error loading label prints:', error.message);
+      return { success: false, items: [], message: error.message };
+    }
+  }
 }
 
 module.exports = new FirestoreService();

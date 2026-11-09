@@ -10,6 +10,7 @@ const cors = require('cors');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
 const firebaseRoutes = require('./routes/firebase');
+const labelRoutes = require('./routes/labels');
 const refreshScheduler = require('./cron/refreshOrders');
 const firestoreService = require('./services/firestore');
 
@@ -104,6 +105,16 @@ app.post('/api/refresh', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/firebase', firebaseRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/etiquetas', labelRoutes);
+
+// Painel (frontend) servido pelo próprio backend quando roda na VPS/Coolify
+const pathMod = require('path');
+const fsMod = require('fs');
+const distDir = pathMod.join(__dirname, '..', 'frontend', 'dist');
+if (!process.env.VERCEL && fsMod.existsSync(distDir)) {
+  app.use(express.static(distDir));
+  app.get(/^\/(?!api\/|health).*/, (req, res) => res.sendFile(pathMod.join(distDir, 'index.html')));
+}
 
 // 404 handler
 app.use('*', (req, res) => {

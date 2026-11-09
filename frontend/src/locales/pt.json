@@ -170,5 +170,13 @@
     "orders": "pedidos",
     "goToPage": "Ir para página",
     "page": "Página"
+  },
+  "labels": {
+    "tab": "Etiquetas impressas",
+    "empty": "Nenhuma etiqueta impressa pelo robô nos últimos 7 dias.",
+    "today": "Hoje",
+    "count": "etiqueta(s)",
+    "order": "Pedido",
+    "printedAt": "Impressa às"
   }
 }

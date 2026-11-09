@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Order } from "@/types/order";
+import { LabelPrint, Order } from "@/types/order";
 import { filterOrders, getOrderStats, sortOrders } from "@/utils/orderUtils";
 import { SummaryBar } from "@/components/SummaryBar";
 import { FilterBar } from "@/components/FilterBar";
@@ -17,7 +17,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
@@ -40,6 +40,19 @@ const Index = () => {
   const stats = getOrderStats(orders, totalCount, storedCounts);
 
   // Fetch orders from backend
+  const [labelPrints, setLabelPrints] = useState<LabelPrint[]>([]);
+
+  const fetchLabelPrints = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/etiquetas?dias=7`);
+      if (!response.ok) return;
+      const data = await response.json();
+      setLabelPrints(Array.isArray(data.items) ? data.items : []);
+    } catch (error) {
+      console.warn('Error fetching label prints:', error);
+    }
+  };
+
   const fetchOrders = async (page: number = currentPage) => {
     try {
       setIsLoading(true);
@@ -228,11 +241,21 @@ const Index = () => {
   };
 
   const handleRefresh = async () => {
-    await fetchOrders(currentPage);
+    await Promise.all([fetchOrders(currentPage), fetchLabelPrints()]);
   };
 
+  // Etiquetas impressas pelo robô, por número do pedido
+  const labelByOrder = new Map(labelPrints.map((l) => [String(l.pedido), l.impresso_em]));
+  const todayKey = new Date().toLocaleDateString('sv-SE');
+  const labelsByDay = labelPrints.reduce<Record<string, LabelPrint[]>>((acc, l) => {
+    const day = new Date(l.impresso_em).toLocaleDateString('sv-SE');
+    (acc[day] = acc[day] || []).push(l);
+    return acc;
+  }, {});
+  const labelsToday = (labelsByDay[todayKey] || []).length;
+
   // Display orders from backend (already paginated and filtered by backend)
-  const displayedOrders = orders;
+  const displayedOrders = orders.map((o) => ({ ...o, label_printed_at: labelByOrder.get(String(o.number)) || null }));
 
   // Reset to first page and fetch data when filters change (except search term)
   useEffect(() => {
@@ -244,14 +267,17 @@ const Index = () => {
     // Fetch orders and stored counts on component mount
     fetchOrders();
     fetchStoredCounts();
+    fetchLabelPrints();
 
       // Auto-refresh every 15 minutes
       const interval = setInterval(() => {
         console.log("Auto-refreshing data...");
         fetchOrders(currentPage);
       }, 15 * 60 * 1000);
+      // Etiquetas impressas: a cada 2 minutos
+      const labelsInterval = setInterval(fetchLabelPrints, 2 * 60 * 1000);
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); clearInterval(labelsInterval); };
   }, []);
 
   if (isLoading) {
@@ -301,6 +327,13 @@ const Index = () => {
                 <span className="bg-warning text-warning-foreground text-xs px-2 py-0.5 rounded-full">
                   {orders.filter((o) => o.attention).length}
                 </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="labels" className="gap-2">
+              <Printer className="h-4 w-4" />
+              {t('labels.tab')}
+              {labelsToday > 0 && (
+                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{labelsToday}</span>
               )}
             </TabsTrigger>
           </TabsList>
@@ -525,6 +558,44 @@ const Index = () => {
             <div className="mt-4 text-center text-sm text-muted-foreground">
               {t('pagination.showing')} {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} {t('pagination.of')} {totalCount} {t('pagination.orders')}
             </div>
+          </TabsContent>
+          <TabsContent value="labels" className="mt-6">
+            {labelPrints.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">{t('labels.empty')}</p>
+            ) : (
+              <div className="space-y-6">
+                {Object.keys(labelsByDay).sort().reverse().map((day) => (
+                  <div key={day} className="rounded-lg border border-border">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+                      <span className="font-medium">
+                        {day === todayKey ? t('labels.today') : new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {labelsByDay[day].length} {t('labels.count')}
+                      </span>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-muted-foreground">
+                          <th className="px-4 py-2 font-medium">{t('labels.order')}</th>
+                          <th className="px-4 py-2 font-medium">{t('labels.printedAt')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {labelsByDay[day].map((l) => (
+                          <tr key={l.pedido} className="border-t border-border">
+                            <td className="px-4 py-2 font-medium">#{l.pedido}</td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {new Date(l.impresso_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

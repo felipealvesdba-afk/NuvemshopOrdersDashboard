@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, Save, Star, Trash2, X } from "lucide-react";
+import { AlertCircle, Printer, Save, Star, Trash2, X } from "lucide-react";
 import { Order } from "@/types/order";
 import { calculateDaysInDelay, isOrderDelayed, isOrderOverdue, calculateOverdueDays } from "@/utils/orderUtils";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,15 @@ export const OrderRow = ({ order, onUpdateNote, onDeleteNote, onToggleAttention 
       <td className="px-3 py-4">
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground">#{order.number}</span>
+          {order.label_printed_at && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] text-blue-700 whitespace-nowrap"
+              title={`${t('labels.printedAt')} ${new Date(order.label_printed_at).toLocaleString('pt-BR')}`}
+            >
+              <Printer className="h-3 w-3" />
+              {new Date(order.label_printed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           {order.attention && (
             <Star className="h-4 w-4 fill-warning text-warning flex-shrink-0" />
           )}
