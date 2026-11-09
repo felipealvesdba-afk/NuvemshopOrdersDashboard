@@ -2,11 +2,11 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm ci --include=dev --no-audit --no-fund
 COPY frontend/ ./
 # mesma origem: o backend serve o painel e a API
 ENV VITE_API_URL=""
-RUN npm run build
+RUN NODE_ENV=development npm run build
 
 FROM node:20-alpine
 RUN apk add --no-cache tzdata
