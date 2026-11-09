@@ -6,7 +6,7 @@ RUN npm ci --include=dev --no-audit --no-fund
 COPY frontend/ ./
 # mesma origem: o backend serve o painel e a API
 ENV VITE_API_URL=""
-RUN NODE_ENV=development npm run build
+RUN NODE_ENV=production npm run build
 
 FROM node:20-alpine
 RUN apk add --no-cache tzdata
